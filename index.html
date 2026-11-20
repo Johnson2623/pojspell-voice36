@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>遊戲製作指令工坊</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1d1d1b;--mut:#6b6a64;--bd:#e2e0d8;--ac:#d9531e;--ac2:#fbe9e1;--ok:#2f8f5b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#171716;--card:#222220;--tx:#efeee9;--mut:#a09f97;--bd:#383835;--ac:#ff7a45;--ac2:#3a2a22;--ok:#5ac58a;color-scheme:dark}}
+*{box-sizing:inherit}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.6 "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif}
+header{padding:18px 16px 8px;max-width:1000px;margin:auto}
+h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--mut);font-size:14px}
+.tabs{display:flex;gap:6px;max-width:1000px;margin:8px auto;padding:0 16px}
+.tabs button{flex:1;padding:9px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;cursor:pointer}
+.tabs button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+main{max-width:1000px;margin:auto;padding:8px 16px 40px}
+.bar{height:8px;background:var(--bd);border-radius:6px;overflow:hidden;margin:6px 0 14px}
+.bar i{display:block;height:100%;background:var(--ok);transition:width .3s}
+.layout{display:grid;grid-template-columns:210px 1fr;gap:14px}
+@media(max-width:720px){.layout{grid-template-columns:1fr}.nav{display:flex;overflow-x:auto;gap:6px}.nav button{white-space:nowrap}}
+.nav{display:flex;flex-direction:column;gap:6px}
+.nav button{text-align:left;padding:9px 11px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:10px;font:inherit;cursor:pointer}
+.nav button.on{border-color:var(--ac);background:var(--ac2)}
+.nav button.done::after{content:" ✓";color:var(--ok);font-weight:700}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 4px;font-size:18px}.card .d{color:var(--mut);margin:0 0 12px;font-size:14px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 3px}
+input,textarea,select{width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:9px;background:var(--bg);color:var(--tx);font:inherit}
+textarea{resize:vertical;min-height:64px}
+pre{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px dashed var(--bd);border-radius:10px;padding:12px;margin:8px 0;font:13.5px/1.6 inherit}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.btn{padding:9px 14px;border-radius:9px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;cursor:pointer}
+.btn.p{background:var(--ac);color:#fff;border-color:var(--ac)}
+.tip{font-size:13px;color:var(--mut);background:var(--ac2);padding:8px 10px;border-radius:9px;margin-top:10px}
+.miss{color:var(--ac);font-weight:600}
+.cmd{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.cmd b{display:block}.tag{font-size:12px;color:var(--mut)}
+.gbox{margin-top:8px;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+.gbox details{border-bottom:1px solid var(--bd)}.gbox details:last-child{border-bottom:0}
+.gbox summary{cursor:pointer;padding:9px 11px;font-weight:600;font-size:14px}
+.gbox .gn{padding:0 11px 4px;font-size:12.5px;color:var(--mut)}
+.gbox .gg{padding:2px 11px 10px}.gbox .gg b{display:block;font-size:12.5px;color:var(--mut);margin:6px 0 4px}
+.chip{display:inline-block;margin:0 5px 5px 0;padding:4px 10px;border:1px solid var(--bd);border-radius:99px;background:var(--card);color:var(--tx);font:13px inherit;cursor:pointer}
+.chip:hover,.chip.on{border-color:var(--ac);background:var(--ac2)}
+.ghint{font-size:12.5px;color:var(--mut);margin:6px 0 0}
+</style>
+</head>
+<body>
+<header><h1>🎮 遊戲製作指令工坊</h1><p>給初學者的互動指令模板:填入想法,自動產生可貼給 Claude 的完整指令,一步步做出遊戲。</p></header>
+<div class="tabs"><button data-t="flow" class="on">製作流程</button><button data-t="lib">快速指令庫</button><button data-t="all">專案總覽</button></div>
+<main><div id="app"></div></main>
+<script>
+const F={name:["遊戲名稱","例:星空收集者"],genre:["遊戲類型","例:2D 平台跳躍 / 益智 / 射擊 / 文字冒險"],platform:["平台","例:網頁瀏覽器(手機+電腦)"],audience:["目標玩家","例:10–15 歲的休閒玩家"],pitch:["一句話描述","例:操控小太空人在隕石間收集星星"],
+loop:["核心循環(玩家反覆做什麼)","例:移動 → 躲避隕石 → 收集星星 → 分數提高"],controls:["操作方式","例:方向鍵 / 手機滑動"],goal:["勝利與失敗條件","例:30 秒內收集 20 顆星勝利;被撞 3 次失敗"],
+setting:["世界觀","例:被遺棄的太空站"],hero:["主角","例:會飛的小太空人"],enemy:["敵人/障礙","例:會追人的隕石"],
+stats:["數值(生命、分數、速度…)","例:生命 3、分數、移動速度 5"],difficulty:["難度曲線想法","例:每 10 秒隕石加速 10%"],
+levels:["關卡數量與構想","例:3 關,第 3 關出現 Boss"],
+style:["美術風格","例:像素風、柔和粉彩"],ui:["介面需要哪些畫面","例:開始畫面、暫停、結算"],
+tech:["技術","例:單一 HTML + JavaScript"],skill:["我的程式程度","例:完全新手,請逐步說明"],
+bugs:["遇到的問題","例:按空白鍵角色沒反應"],pub:["想發佈到哪","例:itch.io、自己的網站、朋友分享連結"]};
+const S=[
+{t:"1 構想",d:"先把點子說清楚,並砍到做得完的大小。",f:["name","genre","platform","audience","pitch"],
+p:"你是資深遊戲設計師,我是初學者。我想做一款{genre}遊戲《{name}》,平台:{platform},目標玩家:{audience}。\n一句話描述:{pitch}\n請幫我:\n1. 提出 3 個讓它更有趣的核心點子\n2. 指出哪些內容對新手太大,並建議縮成「最小可玩版本(MVP)」\n3. 反問我 3 個最關鍵的問題",tip:"MVP = 只有核心玩法的最小版本,先做完再加功能。"},
+{t:"2 核心玩法",d:"定義玩家 30 秒內在做什麼。",f:["loop","controls","goal"],
+p:"針對《{name}》,請幫我設計核心玩法:\n核心循環:{loop}\n操作方式:{controls}\n勝負條件:{goal}\n請檢查這個循環是否有趣、有沒有漏洞,並用「玩家每一步會看到/做什麼」的流程列出,最後給我一份 1 頁的玩法規格。"},
+{t:"3 世界觀角色",d:"賦予遊戲個性,但不要寫太多。",f:["setting","hero","enemy"],
+p:"請為《{name}》設計精簡的世界觀與角色:\n世界觀:{setting}\n主角:{hero}\n敵人/障礙:{enemy}\n每個角色給我:外觀描述、行為規則、一句台詞。總長度控制在 300 字內。"},
+{t:"4 規則數值",d:"把感覺變成數字,方便實作與調整。",f:["stats","difficulty"],
+p:"請為《{name}》建立數值與規則表:\n要管理的數值:{stats}\n難度想法:{difficulty}\n請用表格列出每個數值的初始值、上下限、變化規則,並提供 3 組難度(簡單/普通/困難)的建議參數,標示哪些是之後最容易調整的。"},
+{t:"5 關卡設計",d:"循序漸進教會玩家。",f:["levels"],
+p:"請為《{name}》設計關卡:{levels}\n每一關請寫:學到的新東西、障礙配置、通關條件、預估遊玩時間。第一關要能在不看說明的情況下自然教會玩家操作。"},
+{t:"6 介面美術",d:"先用簡單圖形,美術之後再升級。",f:["style","ui"],
+p:"《{name}》美術風格:{style}\n需要的畫面:{ui}\n請給我:配色方案(含色碼)、每個畫面的版面配置草圖(文字描述)、以及不用外部圖片也能完成的替代做法(例如純 CSS / emoji / 簡單圖形)。"},
+{t:"7 程式實作",d:"請 Claude 一次做出能玩的第一版。",f:["tech","skill"],
+p:"請依照我們討論過的《{name}》設計({genre},玩法:{loop},操作:{controls},勝負:{goal}),用「{tech}」做出第一個可玩版本。\n我的程度:{skill}\n要求:\n1. 只實作 MVP 核心玩法,程式碼加上中文註解\n2. 把可調整的數值(速度、生命等)集中放在檔案最上方\n3. 完成後告訴我如何執行,以及下一步可以加什麼功能",tip:"如果程式太長,可以分段要求:先做移動,再做障礙,再做計分。"},
+{t:"8 測試除錯",d:"描述問題越具體,越容易修好。",f:["bugs"],
+p:"我的遊戲《{name}》有問題:{bugs}\n請:\n1. 先問我需要提供的資訊(錯誤訊息、發生步驟)\n2. 列出最可能的 3 個原因\n3. 給我修改後的完整相關程式碼,並說明改了什麼、為什麼",tip:"貼上錯誤訊息、你做了什麼操作、預期與實際結果的差異。"},
+{t:"9 發佈",d:"讓朋友玩到你的作品。",f:["pub"],
+p:"《{name}》已經完成,我想發佈到:{pub}\n請給我:發佈前檢查清單(手機/電腦相容、載入速度、說明文字)、一步步發佈教學、遊戲介紹文案,以及收集玩家回饋的簡單問卷題目。"}];
+const LIB=[["加功能","請在目前的遊戲中加入:【功能】。請只修改必要的部分,並說明改了哪幾行。"],["調難度","這個遊戲太【簡單/難】了。請分析原因,給 3 個調整方案並標示要改哪些數值。"],["解釋程式","請用國中生看得懂的方式,逐段解釋這份程式碼在做什麼:\n【貼上程式碼】"],["加音效","請用不需要外部檔案的方式(例如 Web Audio API)為遊戲加入:得分、受傷、勝利三種音效。"],["手機支援","請讓這個遊戲在手機上也能玩:加入觸控/滑動操作,並讓畫面自動縮放。"],["存檔紀錄","請加入最高分紀錄,並在重新開啟後仍保留。"],["程式碼優化","請檢查這份程式碼,找出重複與難讀的地方,在不改變玩法的前提下整理,並列出改動清單。"],["玩家回饋分析","以下是玩家回饋,請整理成『優先修正清單』並按影響大小排序:\n【貼上回饋】"],["點子發想","我卡關了。請針對《遊戲名稱》給我 10 個小而有趣的新機制,每個都標示實作難度(1–5)。"],["設計文件","請把我們到目前的討論整理成 1–2 頁的遊戲設計文件:概述、玩法、角色、數值、關卡、待辦。"]];
+const GENRES=[
+["1 可直接在對話中玩的互動小遊戲","我可以用 HTML/JavaScript 做成網頁小遊戲,直接在聊天裡玩或發佈成連結",[["經典遊戲",["貪食蛇","俄羅斯方塊","打磚塊","井字遊戲","2048","踩地雷","記憶翻牌"]],["益智遊戲",["數獨","拼圖","文字接龍","猜字遊戲(類似 Wordle)","迷宮"]],["小型動作遊戲",["太空射擊","跑酷","反應速度測試"]]]],
+["2 文字冒險與角色扮演","我可以當遊戲主持人(像 TRPG 的 GM),帶你玩各種劇情",[["TRPG 劇情主題",["奇幻冒險","懸疑","科幻","推理"]],["互動小說與推理",["有分支選擇的互動小說","劇本殺式的推理案件"]]]],
+["3 教育與學習遊戲","可以把語言學習做成遊戲化的形式",[["學習類型",["單字配對","拼音練習","測驗闖關","閃卡"]],["遊戲化機制",["依發音組合拼字","計分","連續答對獎勵"]]]],
+["4 桌遊與卡牌遊戲設計","實體或可列印的遊戲設計",[["規則設計",["設計規則","卡牌效果","平衡數值"]],["派對與團康",["派對遊戲","團康遊戲","聚會破冰遊戲"]],["可列印素材",["可列印的題目卡","計分表"]]]]];
+function genreHtml(){const cur=(st.v.genre||"").trim();return '<div class="gbox">'+GENRES.map((c,i)=>'<details'+(i===0?' open':'')+'><summary>'+esc(c[0])+'</summary><div class="gn">'+esc(c[1])+'</div><div class="gg">'+c[2].map(g=>'<b>'+esc(g[0])+'</b>'+g[1].map(t=>'<button type="button" class="chip'+(cur===t?' on':'')+'" data-g="'+esc(t)+'">'+esc(t)+'</button>').join('')).join('')+'</div></details>').join('')+'</div><p class="ghint">點選上方選項可自動填入,也可以直接輸入自己的類型。</p>'}
+const DEF_PLATFORM="網頁瀏覽器(PC + 手機)";
+const DEF_AUD="10-15歲的休閒玩家";
+LIB.push(["新增關卡","請為目前的遊戲新增第【幾】關,難度比前一關稍高,並加入一個新機制。只提供需要新增或修改的程式碼,並說明放在哪裡。"],["暫停與重新開始","請加入暫停、重新開始、回到主選單三個功能,電腦可用快捷鍵,手機要有畫面按鈕。"],["分數與生命介面","請在畫面上方加入分數、生命、計時的顯示(HUD),版面簡潔,在手機上不要遮住遊戲畫面。"],["新手教學","請設計 30 秒內能看懂的新手引導,盡量用圖示和簡短提示,一步步教會玩家操作,並可以跳過。"],["新增敵人或障礙","請為遊戲新增【幾】種敵人或障礙,說明各自的行為與弱點,並用方便重複使用的程式結構來寫。"],["道具與升級系統","請設計 5 種道具,列出效果、持續時間、出現機率,並加入程式中,數值集中放在檔案最上方方便調整。"],["修正手機版問題","我的遊戲在手機上出現問題:【描述問題】。請檢查畫面縮放、觸控事件、頁面捲動干擾與效能,並逐項提供修正。"],["效能優化","遊戲在【情況】時會變慢或卡頓,請找出可能原因並優化,說明每項改進的預期效果,不要改變玩法。"],["難度選擇與動態難度","請加入簡單、普通、困難三種難度選擇,並依照玩家表現(例如連續失敗)自動微調難度,參數集中管理。"],["封面與介紹文案","請為《遊戲名稱》設計開始畫面、一句話標語、100 字遊戲介紹,以及 3 個適合發佈頁面的標題。"]);
+const DEF_CTRL="方向鍵/手機滑動";
+const LOOPS=["移動→躲避障礙→收集道具→分數提高","跳躍→踩敵人→過關","射擊→擊落敵人→獲得升級","配對相同圖案→消除→連鎖得分","收集資源→合成道具→解鎖新區域","翻牌→記憶位置→配對成功","滑動方塊→合併數字→衝高分","奔跑→跳過陷阱→跑得更遠","回答題目→答對得分→連擊加成","組合拼音→拼出單字→獲得星星","推箱子→到達指定位置→進入下一關","探索迷宮→找鑰匙→開門逃脫","蓄力瞄準→發射→命中目標","種植→澆水→收成→賣出賺錢","打怪→取得經驗→升級變強","抽卡→出牌→擊敗對手","建造→防守波次→升級防禦塔","點擊→累積金幣→購買升級","駕駛→閃避車輛→抵達終點","節奏點擊→對準節拍→連擊","移動碎片→拼圖→完成圖片","猜字母→獲得提示→猜出單字","偵查線索→推理→指出兇手","選擇對話→影響劇情→走向結局","吃豆子→躲避鬼→清空地圖","彈跳球→打破磚塊→接住道具","釣魚→等待咬鉤→拉竿收魚","照顧寵物→餵食→成長進化","看到訊號→快速按下→刷新反應紀錄","畫線→引導角色→到達終點","堆疊方塊→對齊→蓋到最高","潛行→避開守衛→取得寶物","拋擲→彈射→擊倒目標","管理資源→分配→撐過回合","飛行→穿過縫隙→避免碰撞","收集碎片→組裝→完成機器","對戰→出招→破防反擊","找不同→標記→找齊全部","計時挑戰→快速完成任務→刷新紀錄","連線→消除→清空棋盤","潛行→躲藏→等待時機通過","投擲→接球→傳給隊友","打地鼠→快速點擊→累積分數","切水果→滑動→避開炸彈","騎乘→過彎→漂移加速","找路→解謎機關→開啟通道","蒐集食材→烹飪→服務客人","點選選項→觀察結果→調整策略","跟隨指示→重複序列→記住順序","守護基地→擊退敵人→修復損壞"];
+const GOALS=["30 秒內收集 20 顆星勝利;被撞 3 次失敗","達到 100 分過關;生命歸零失敗","抵達終點勝利;掉出畫面失敗","清除所有敵人勝利;主角死亡失敗","在時間內完成任務勝利;時間到失敗","配對全部卡片勝利;步數用完失敗","湊出 2048 勝利;無法移動失敗","存活 60 秒勝利;生命歸零失敗","答對 10 題勝利;答錯 3 題失敗","拼出指定單字勝利;猜錯 6 次失敗","找到出口勝利;被追上失敗","收集全部鑰匙勝利;被陷阱擊中 3 次失敗","擊敗 Boss 勝利;血量歸零失敗","賺到 1000 金幣勝利;破產失敗","守住基地 10 波勝利;基地被攻破失敗","連擊達 30 勝利;連擊中斷 5 次失敗","完成整幅拼圖勝利;時間用完失敗","推理出兇手勝利;指認錯誤 2 次失敗","達成指定結局勝利;觸發壞結局失敗","清空所有磚塊勝利;球掉落 3 次失敗","釣到 5 條魚勝利;魚餌用完失敗","寵物成長到最終型態勝利;飢餓值歸零失敗","比對手先拿到 10 分勝利;對手先拿到 10 分失敗","跑滿 1000 公尺勝利;撞到障礙失敗","分數超過上次紀錄勝利;一次失誤即結束","清空棋盤勝利;無可消除失敗","蓋到指定高度勝利;塔倒塌失敗","取得寶物並離開勝利;被守衛發現失敗","擊倒全部目標勝利;彈藥用完失敗","撐過 10 回合勝利;資源耗盡失敗","飛行 500 公尺勝利;撞到障礙失敗","組裝完成勝利;零件不足失敗","贏得 3 回合勝利;輸掉 3 回合失敗","找齊 10 個不同處勝利;點錯 3 次失敗","在最短時間內完成勝利;超過時限失敗","完成全部訂單勝利;顧客等太久離開 3 位失敗","記住並重現 10 段序列勝利;序列出錯失敗","收集 3 顆星星並到達終點勝利;掉落懸崖失敗","打中 20 隻地鼠勝利;漏掉 5 隻失敗","切到 50 個水果勝利;切到炸彈失敗","第一個抵達終點勝利;排名最後失敗","開啟所有機關勝利;被困住失敗","全員存活通關勝利;任一隊友倒下失敗","打敗全部敵方勝利;己方全滅失敗","達成 3 顆星評價勝利;不到 1 顆星失敗","吃完全部豆子勝利;被鬼抓到 3 次失敗","搶佔對方基地勝利;己方基地被占領失敗","領先對手 5 分勝利;被領先 5 分失敗","所有玩家都過關勝利;被淘汰者失敗","活到最後一人勝利;被淘汰失敗"];
+const SUG={loop:LOOPS,goal:GOALS};
+function shuf(n){const a=[...Array(n).keys()];for(let i=n-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,5)}
+const pick={loop:shuf(LOOPS.length),goal:shuf(GOALS.length)};
+function sugHtml(k){const cur=(st.v[k]||"").trim();return '<div class="gbox" style="padding:8px 11px"><div class="ghint" style="margin:0 0 6px">隨機 5 種建議(點選即可填入):</div>'+pick[k].map(i=>'<button type="button" class="chip'+(cur===SUG[k][i]?' on':'')+'" data-s="'+k+'" data-n="'+i+'">'+esc(SUG[k][i])+'</button>').join('')+'<div><button type="button" class="btn" data-sh="'+k+'" style="padding:4px 10px;font-size:13px">🔀 換一批(共 '+SUG[k].length+' 種)</button></div></div>'}
+let st={v:{platform:DEF_PLATFORM,audience:DEF_AUD,controls:DEF_CTRL},done:[],cur:0,tab:"flow"};
+try{const s=localStorage.getItem("gps");if(s)st=Object.assign(st,JSON.parse(s))}catch(e){}
+st.v=st.v||{};if(st.v.platform===undefined)st.v.platform=DEF_PLATFORM;if(st.v.audience===undefined)st.v.audience=DEF_AUD;if(st.v.controls===undefined)st.v.controls=DEF_CTRL;
+const save=()=>{try{localStorage.setItem("gps",JSON.stringify(st))}catch(e){}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const gen=(p,h)=>p.replace(/\{(\w+)\}/g,(m,k)=>{const v=(st.v[k]||"").trim();return v?v:(h?`<span class="miss">【${F[k][0]}】</span>`:`【${F[k][0]}】`)});
+async function cp(txt,b){try{await navigator.clipboard.writeText(txt)}catch(e){const t=document.createElement("textarea");t.value=txt;document.body.appendChild(t);t.select();try{document.execCommand("copy")}catch(_){}t.remove()}const o=b.textContent;b.textContent="已複製 ✓";setTimeout(()=>b.textContent=o,1400)}
+function render(){
+ document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===st.tab));
+ const a=document.getElementById("app");
+ const pct=Math.round(st.done.length/S.length*100);
+ if(st.tab==="flow"){
+  const s=S[st.cur];
+  a.innerHTML=`<div class="bar"><i style="width:${pct}%"></i></div><div class="layout"><div class="nav">${S.map((x,i)=>`<button data-i="${i}" class="${i===st.cur?"on":""} ${st.done.includes(i)?"done":""}">${x.t}</button>`).join("")}</div><div>
+  <div class="card"><h2>${s.t}</h2><p class="d">${s.d}</p>${s.f.map(k=>`<label>${F[k][0]}${k==="audience"||k==="platform"||k==="controls"?"(可更改)":""}</label>${k==="pitch"||k==="loop"||k==="goal"||k==="bugs"||k==="levels"?`<textarea data-k="${k}" placeholder="${esc(F[k][1])}">${esc(st.v[k]||"")}</textarea>`:`<input data-k="${k}" placeholder="${esc(F[k][1])}" value="${esc(st.v[k]||"")}">`}${k==="genre"?genreHtml():""}${SUG[k]?sugHtml(k):""}`).join("")}${s.tip?`<div class="tip">💡 ${s.tip}</div>`:""}</div>
+  <div class="card"><h2>產生的指令</h2><p class="d">複製後貼給 Claude;紅字是尚未填寫的欄位。</p><pre id="out">${gen(s.p,true).replace(/\n/g,"<br>")}</pre>
+  <div class="row"><button class="btn p" id="cp">複製指令</button><button class="btn" id="dn">${st.done.includes(st.cur)?"取消完成":"標記完成 ✓"}</button>${st.cur<S.length-1?`<button class="btn" id="nx">下一步 →</button>`:""}</div></div></div></div>`;
+  a.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{st.cur=+b.dataset.i;save();render()});
+  a.querySelectorAll("[data-k]").forEach(el=>el.oninput=()=>{st.v[el.dataset.k]=el.value;save();document.getElementById("out").innerHTML=gen(s.p,true).replace(/\n/g,"<br>")});
+  a.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{st.v.genre=b.dataset.g;save();a.querySelector('[data-k="genre"]').value=b.dataset.g;a.querySelectorAll("[data-g]").forEach(x=>x.classList.toggle("on",x===b));document.getElementById("out").innerHTML=gen(s.p,true).replace(/\n/g,"<br>")});
+  a.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{const k=b.dataset.s,t=SUG[k][+b.dataset.n];st.v[k]=t;save();a.querySelector('[data-k="'+k+'"]').value=t;a.querySelectorAll('[data-s="'+k+'"]').forEach(x=>x.classList.toggle("on",x===b));document.getElementById("out").innerHTML=gen(s.p,true).replace(/\n/g,"<br>")});
+  a.querySelectorAll("[data-sh]").forEach(b=>b.onclick=()=>{pick[b.dataset.sh]=shuf(SUG[b.dataset.sh].length);render()});
+  document.getElementById("cp").onclick=e=>cp(gen(s.p,false),e.target);
+  document.getElementById("dn").onclick=()=>{const i=st.done.indexOf(st.cur);i<0?st.done.push(st.cur):st.done.splice(i,1);save();render()};
+  const nx=document.getElementById("nx");if(nx)nx.onclick=()=>{if(!st.done.includes(st.cur))st.done.push(st.cur);st.cur++;save();render();scrollTo(0,0)};
+ }else if(st.tab==="lib"){
+  a.innerHTML=`<div class="card"><h2>快速指令庫</h2><p class="d">遊戲做到一半常用的指令,【】內請自行替換。</p>${LIB.map((c,i)=>`<div class="card cmd"><div><b>${c[0]}</b><span class="tag">${esc(c[1]).replace(/\n/g,"<br>")}</span></div><button class="btn" data-c="${i}">複製</button></div>`).join("")}</div>`;
+  a.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>cp(LIB[b.dataset.c][1],b));
+ }else{
+  const txt=S.map(s=>`## ${s.t}\n${gen(s.p,false)}`).join("\n\n");
+  a.innerHTML=`<div class="card"><h2>專案總覽</h2><p class="d">已完成 ${st.done.length}/${S.length} 個階段。可一次複製全部指令存成筆記。</p><div class="bar"><i style="width:${pct}%"></i></div><pre>${esc(txt)}</pre><div class="row"><button class="btn p" id="ca">複製全部</button><button class="btn" id="rs">清除重來</button></div></div>`;
+  document.getElementById("ca").onclick=e=>cp(txt,e.target);
+  document.getElementById("rs").onclick=()=>{if(confirm("確定清除所有內容?")){st={v:{platform:DEF_PLATFORM,audience:DEF_AUD,controls:DEF_CTRL},done:[],cur:0,tab:"flow"};save();render()}};
+ }}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{st.tab=b.dataset.t;save();render()});
+render();
+</script>
+</body>
+</html>
